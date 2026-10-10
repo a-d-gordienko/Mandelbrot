@@ -300,7 +300,7 @@ void init() {
 }
 
 int main(int argc, char** argv) {
-    SetConsoleOutputCP(1251);
+    SetConsoleOutputCP(65001);
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowSize(WIDTH, HEIGHT);

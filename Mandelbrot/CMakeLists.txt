@@ -15,6 +15,9 @@ if(MSVC)
     
     # Отключение некоторых специфических предупреждений
     add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/wd4996>)
+
+    # Единая кодировка исходников и строк в бинарнике (UTF-8)
+    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
 endif() 
 
 # Поиск пакетов
