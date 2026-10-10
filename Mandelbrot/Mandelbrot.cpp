@@ -3,6 +3,10 @@
 #include <cstdio>
 #include <iostream>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 // Шейдерные константы OpenGL 2.0 (Windows gl.h знает только GL 1.1)
 #ifndef GL_VERTEX_SHADER
 #define GL_VERTEX_SHADER          0x8B31
@@ -300,7 +304,9 @@ void init() {
 }
 
 int main(int argc, char** argv) {
+#ifdef _WIN32
     SetConsoleOutputCP(65001);
+#endif
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowSize(WIDTH, HEIGHT);

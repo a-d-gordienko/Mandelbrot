@@ -21,65 +21,45 @@ if(MSVC)
 endif() 
 
 # Поиск пакетов
+set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL REQUIRED)
 
-# Пути к freeglut
-set(FREEGLUT_DIR "D:/programming/libs/freeglut")
-set(FREEGLUT_INCLUDE_DIR "${FREEGLUT_DIR}/include")
-set(FREEGLUT_LIB_DIR "${FREEGLUT_DIR}/lib/x64")
-
-# Проверка существования путей
-if(NOT EXISTS ${FREEGLUT_INCLUDE_DIR})
-    message(WARNING "FreeGLUT include directory not found: ${FREEGLUT_INCLUDE_DIR}")
+# GLUT/freeglut: на Linux находится системный freeglut3-dev автоматически.
+# На Windows по умолчанию берём локальную сборку freeglut (FREEGLUT_DIR переопределяется через -D).
+if(WIN32)
+    set(FREEGLUT_DIR "D:/programming/libs/freeglut" CACHE PATH "Локальная сборка FreeGLUT (Windows)")
+    add_library(GLUT::GLUT SHARED IMPORTED)
+    set_target_properties(GLUT::GLUT PROPERTIES
+        IMPORTED_LOCATION "${FREEGLUT_DIR}/bin/x64/freeglut.dll"
+        IMPORTED_IMPLIB "${FREEGLUT_DIR}/lib/x64/freeglut.lib"
+        INTERFACE_INCLUDE_DIRECTORIES "${FREEGLUT_DIR}/include")
+else()
+    find_package(GLUT REQUIRED)
 endif()
-
-if(NOT EXISTS ${FREEGLUT_LIB_DIR})
-    message(WARNING "FreeGLUT lib directory not found: ${FREEGLUT_LIB_DIR}")
-endif()
-
-# Включение директорий
-include_directories(${FREEGLUT_INCLUDE_DIR})
-link_directories(${FREEGLUT_LIB_DIR})
 
 # Добавление исполняемого файла
 add_executable(MandelbrotFractal Mandelbrot.cpp)
 
-# Настройка целевых свойств
-target_include_directories(MandelbrotFractal PRIVATE ${FREEGLUT_INCLUDE_DIR})
-target_link_directories(MandelbrotFractal PRIVATE ${FREEGLUT_LIB_DIR})
-
-# Связывание библиотек
-target_link_libraries(MandelbrotFractal 
-    PRIVATE 
-    OpenGL::GL
-    ${FREEGLUT_LIB_DIR}/freeglut.lib
-    opengl32.lib
-    glu32.lib
-    winmm.lib
-)
-
-# Для отладки: вывод информации о путях
-message(STATUS "FreeGLUT include dir: ${FREEGLUT_INCLUDE_DIR}")
-message(STATUS "FreeGLUT lib dir: ${FREEGLUT_LIB_DIR}")
-
-# Копирование DLL файлов в выходную директорию
-add_custom_command(TARGET MandelbrotFractal POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${FREEGLUT_DIR}/bin/x64/freeglut.dll"
-        $<TARGET_FILE_DIR:MandelbrotFractal>
-    COMMENT "Copying FreeGLUT DLL to output directory"
-)
+# Копирование DLL (только Windows)
+if(WIN32)
+    if(EXISTS "${FREEGLUT_DIR}/bin/x64/freeglut.dll")
+        add_custom_command(TARGET MandelbrotFractal POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${FREEGLUT_DIR}/bin/x64/freeglut.dll"
+                $<TARGET_FILE_DIR:MandelbrotFractal>
+            COMMENT "Copying FreeGLUT DLL to output directory"
+        )
+    endif()
+endif()
 
 # Настройка свойств Visual Studio
 if(MSVC)
     # Настройка для отладки
     target_compile_definitions(MandelbrotFractal PRIVATE $<$<CONFIG:Debug>:_DEBUG>)
-    
+
     # Отключение предупреждений для безопасных функций
     target_compile_options(MandelbrotFractal PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/wd4996>)
 endif()
 
-# Дополнительные настройки для Windows
-if(WIN32)
-    target_link_libraries(MandelbrotFractal PRIVATE gdi32)
-endif()
+# Связывание библиотек (кросс-платформенное)
+target_link_libraries(MandelbrotFractal PRIVATE OpenGL::GL GLUT::GLUT)
